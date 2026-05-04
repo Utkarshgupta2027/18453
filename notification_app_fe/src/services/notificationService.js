@@ -1,4 +1,4 @@
-const API_PATH = 'http://20.207.122.201/evaluation-service/notifications'
+const API_PATH = '/evaluation-service/notifications'
 
 export async function getNotifications({ limit, page, notificationType } = {}) {
   const params = new URLSearchParams()

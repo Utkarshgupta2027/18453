@@ -11,6 +11,14 @@ npm run dev
 
 The app is configured to run on `http://localhost:3000`.
 
+If the notification API returns `401`, create `notification_app_fe/.env.local` and add the bearer token issued during setup:
+
+```bash
+VITE_NOTIFICATION_API_TOKEN=your_token_here
+```
+
+Restart the dev server after saving `.env.local`.
+
 ## Features
 
 - Fetches notifications from the evaluation API through a Vite proxy.
