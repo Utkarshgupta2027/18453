@@ -1,0 +1,127 @@
+.appShell {
+  min-height: 100svh;
+  background:
+    linear-gradient(180deg, rgba(36, 87, 197, 0.08), rgba(0, 133, 111, 0.04) 38%, transparent),
+    #f7f8fb;
+}
+
+.topBar {
+  border-bottom: 1px solid #dde3ee;
+  backdrop-filter: blur(12px);
+}
+
+.toolbar {
+  min-height: 76px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brandMark,
+.notificationIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.brandMark {
+  color: #ffffff;
+  background: #2457c5;
+}
+
+.notificationIcon {
+  color: #2457c5;
+  background: #eaf0ff;
+}
+
+.mainContent {
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
+.workspaceCard {
+  min-height: calc(100svh - 124px);
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid #e1e6ef;
+  border-radius: 8px;
+  background: #fbfcff;
+}
+
+.metric-urgent {
+  border-color: #ffd2cf;
+  background: #fff7f6;
+}
+
+.notification {
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.notification:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(33, 43, 70, 0.09);
+}
+
+.notification.unread {
+  border-left: 5px solid #2457c5;
+}
+
+.notification.viewed {
+  opacity: 0.78;
+}
+
+.notification.viewed .notificationIcon {
+  color: #5b6578;
+  background: #edf0f5;
+}
+
+.notificationContent {
+  padding: 16px;
+}
+
+.messageText {
+  margin-top: 10px;
+  color: #172033;
+  overflow-wrap: anywhere;
+}
+
+.loadingState,
+.emptyState {
+  min-height: 360px;
+  gap: 14px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    align-items: flex-start;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .brandMark {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mainContent {
+    padding-top: 16px;
+  }
+
+  .workspaceCard {
+    min-height: auto;
+  }
+}
