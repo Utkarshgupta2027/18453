@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class LoggingProxyService {
@@ -26,17 +28,33 @@ public class LoggingProxyService {
     public ResponseEntity<String> sendLog(Map<String, Object> logEntry, String tokenOverride) {
         String token = notificationAuthService.getAccessToken(tokenOverride);
 
-        return restClient.post()
-                .uri(properties.getLogUrl())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .headers(headers -> {
-                    if (StringUtils.hasText(token)) {
-                        headers.setBearerAuth(token);
-                    }
-                })
-                .body(logEntry)
-                .retrieve()
-                .toEntity(String.class);
+        try {
+            return restClient.post()
+                    .uri(properties.getLogUrl())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .headers(headers -> {
+                        if (StringUtils.hasText(token)) {
+                            headers.setBearerAuth(token);
+                        }
+                    })
+                    .body(logEntry)
+                    .retrieve()
+                    .toEntity(String.class);
+        } catch (RestClientResponseException error) {
+            throw new ResponseStatusException(
+                    error.getStatusCode(),
+                    resolveApiErrorMessage("Log API request failed", error),
+                    error);
+        }
+    }
+
+    private String resolveApiErrorMessage(String fallback, RestClientResponseException error) {
+        String responseBody = error.getResponseBodyAsString();
+        if (StringUtils.hasText(responseBody)) {
+            return fallback + ": " + responseBody;
+        }
+
+        return fallback + " with status " + error.getStatusCode().value();
     }
 }

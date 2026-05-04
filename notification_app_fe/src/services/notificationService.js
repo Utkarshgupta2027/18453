@@ -19,11 +19,7 @@ export async function getNotifications({ limit, page, notificationType } = {}) {
   const response = await fetch(url, { headers })
 
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('Backend reached the notification API, but the API token is missing or expired.')
-    }
-
-    throw new Error(`Notification backend returned ${response.status}`)
+    throw new Error(await resolveErrorMessage(response, 'Notification backend returned'))
   }
 
   const payload = await response.json()
@@ -47,7 +43,7 @@ export async function generateToken(credentials) {
   })
 
   if (!response.ok) {
-    throw new Error(`Token generation failed with status ${response.status}`)
+    throw new Error(await resolveErrorMessage(response, 'Token generation failed'))
   }
 
   const payload = await response.json()
@@ -79,4 +75,29 @@ function extractNotifications(payload) {
   if (Array.isArray(payload?.data)) return payload.data
   if (Array.isArray(payload?.data?.notifications)) return payload.data.notifications
   return undefined
+}
+
+async function resolveErrorMessage(response, fallback) {
+  try {
+    const payload = await response.json()
+    const message =
+      payload.message ||
+      payload.error ||
+      payload.detail ||
+      payload.reason ||
+      payload.path
+
+    if (message) {
+      return `${fallback}: ${message}`
+    }
+  } catch {
+    try {
+      const text = await response.text()
+      if (text) return `${fallback}: ${text}`
+    } catch {
+      // Fall through to the status-only message.
+    }
+  }
+
+  return `${fallback} with status ${response.status}`
 }

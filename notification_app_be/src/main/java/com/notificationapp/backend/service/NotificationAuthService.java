@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -90,13 +91,20 @@ public class NotificationAuthService {
     }
 
     private AuthResponse requestFreshToken(Map<String, String> body) {
-        return authClient.post()
-                .uri(properties.getAuthUrl())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(AuthResponse.class);
+        try {
+            return authClient.post()
+                    .uri(properties.getAuthUrl())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(AuthResponse.class);
+        } catch (RestClientResponseException error) {
+            throw new ResponseStatusException(
+                    error.getStatusCode(),
+                    resolveApiErrorMessage("Token generation failed", error),
+                    error);
+        }
     }
 
     private Instant resolveExpiry(long expiresIn) {
@@ -117,6 +125,15 @@ public class NotificationAuthService {
                     HttpStatus.BAD_REQUEST,
                     "Email, name, roll number, access code, client id, and client secret are required");
         }
+    }
+
+    private String resolveApiErrorMessage(String fallback, RestClientResponseException error) {
+        String responseBody = error.getResponseBodyAsString();
+        if (StringUtils.hasText(responseBody)) {
+            return fallback + ": " + responseBody;
+        }
+
+        return fallback + " with status " + error.getStatusCode().value();
     }
 
     public record AuthRequest(
