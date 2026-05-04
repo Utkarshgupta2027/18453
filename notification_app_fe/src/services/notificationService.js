@@ -23,11 +23,19 @@ export async function getNotifications({ limit, page, notificationType } = {}) {
   }
 
   const payload = await response.json()
-  const notifications = Array.isArray(payload) ? payload : payload.notifications
+  const notifications = extractNotifications(payload)
 
   if (!Array.isArray(notifications)) {
     throw new Error('Notification API response did not include a notifications array')
   }
 
   return notifications
+}
+
+function extractNotifications(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.notifications)) return payload.notifications
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.notifications)) return payload.data.notifications
+  return undefined
 }

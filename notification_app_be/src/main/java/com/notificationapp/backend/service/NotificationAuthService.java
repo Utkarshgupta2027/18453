@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.notificationapp.backend.config.NotificationApiProperties;
 import java.time.Instant;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class NotificationAuthService {
@@ -31,6 +33,11 @@ public class NotificationAuthService {
 
         if (hasAuthCredentials()) {
             AuthResponse response = requestFreshToken();
+            if (response == null || !StringUtils.hasText(response.accessToken())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Notification auth service did not return an access token");
+            }
             cachedToken = response.accessToken();
             cachedTokenExpiry = resolveExpiry(response.expiresIn());
             return cachedToken;

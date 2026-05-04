@@ -5,7 +5,17 @@ const TYPE_WEIGHT = {
 }
 
 export function getNotificationId(notification) {
-  return notification.ID || notification.id
+  return (
+    notification.ID ||
+    notification.id ||
+    notification.notificationId ||
+    notification._id ||
+    [
+      getNotificationType(notification),
+      getNotificationMessage(notification),
+      getNotificationTimestamp(notification),
+    ].join('|')
+  )
 }
 
 export function getNotificationType(notification) {
@@ -23,7 +33,8 @@ export function getNotificationTimestamp(notification) {
 export function getPriorityNotifications(notifications, { limit = 10, type = 'All' } = {}) {
   return notifications
     .filter((item) => type === 'All' || getNotificationType(item) === type)
-    .toSorted((a, b) => {
+    .slice()
+    .sort((a, b) => {
       const weightDifference = getTypeWeight(b) - getTypeWeight(a)
       if (weightDifference !== 0) return weightDifference
 
@@ -33,7 +44,7 @@ export function getPriorityNotifications(notifications, { limit = 10, type = 'Al
 }
 
 export function sortByNewest(notifications) {
-  return notifications.toSorted((a, b) => getTimeValue(b) - getTimeValue(a))
+  return notifications.slice().sort((a, b) => getTimeValue(b) - getTimeValue(a))
 }
 
 export function formatNotificationTime(notification) {
