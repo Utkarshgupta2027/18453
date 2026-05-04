@@ -1,5 +1,6 @@
 package com.notificationapp.backend.service;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.notificationapp.backend.config.NotificationApiProperties;
 import java.time.Instant;
@@ -26,7 +27,11 @@ public class NotificationAuthService {
         this.authClient = RestClient.builder().build();
     }
 
-    public synchronized String getAccessToken() {
+    public synchronized String getAccessToken(String tokenOverride) {
+        if (StringUtils.hasText(tokenOverride)) {
+            return tokenOverride.trim();
+        }
+
         if (StringUtils.hasText(cachedToken) && Instant.now().isBefore(cachedTokenExpiry)) {
             return cachedToken;
         }
@@ -46,6 +51,25 @@ public class NotificationAuthService {
         return properties.getToken();
     }
 
+    public TokenResponse generateAccessToken(AuthRequest request) {
+        validateAuthRequest(request);
+        AuthResponse response = requestFreshToken(Map.of(
+                "email", request.email(),
+                "name", request.name(),
+                "rollNo", request.rollNo(),
+                "accessCode", request.accessCode(),
+                "clientID", request.clientId(),
+                "clientSecret", request.clientSecret()));
+
+        if (response == null || !StringUtils.hasText(response.accessToken())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Notification auth service did not return an access token");
+        }
+
+        return new TokenResponse(response.accessToken(), response.expiresIn());
+    }
+
     private boolean hasAuthCredentials() {
         return StringUtils.hasText(properties.getEmail())
                 && StringUtils.hasText(properties.getName())
@@ -56,14 +80,16 @@ public class NotificationAuthService {
     }
 
     private AuthResponse requestFreshToken() {
-        Map<String, String> body = Map.of(
+        return requestFreshToken(Map.of(
                 "email", properties.getEmail(),
                 "name", properties.getName(),
                 "rollNo", properties.getRollNo(),
                 "accessCode", properties.getAccessCode(),
                 "clientID", properties.getClientId(),
-                "clientSecret", properties.getClientSecret());
+                "clientSecret", properties.getClientSecret()));
+    }
 
+    private AuthResponse requestFreshToken(Map<String, String> body) {
         return authClient.post()
                 .uri(properties.getAuthUrl())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -79,8 +105,36 @@ public class NotificationAuthService {
         return Instant.ofEpochSecond(Math.max(now, expiryEpochSeconds - TOKEN_REFRESH_SKEW_SECONDS));
     }
 
-    private record AuthResponse(
+    private void validateAuthRequest(AuthRequest request) {
+        if (request == null
+                || !StringUtils.hasText(request.email())
+                || !StringUtils.hasText(request.name())
+                || !StringUtils.hasText(request.rollNo())
+                || !StringUtils.hasText(request.accessCode())
+                || !StringUtils.hasText(request.clientId())
+                || !StringUtils.hasText(request.clientSecret())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Email, name, roll number, access code, client id, and client secret are required");
+        }
+    }
+
+    public record AuthRequest(
+            String email,
+            String name,
+            String rollNo,
+            String accessCode,
+            String clientId,
+            String clientSecret) {
+    }
+
+    public record TokenResponse(
             @JsonProperty("access_token") String accessToken,
             @JsonProperty("expires_in") long expiresIn) {
+    }
+
+    private record AuthResponse(
+            @JsonProperty("access_token") @JsonAlias("accessToken") String accessToken,
+            @JsonProperty("expires_in") @JsonAlias("expiresIn") long expiresIn) {
     }
 }

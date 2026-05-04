@@ -22,6 +22,7 @@ import {
   Switch,
   Tab,
   Tabs,
+  TextField,
   ThemeProvider,
   Toolbar,
   Tooltip,
@@ -32,13 +33,22 @@ import {
   DoneAll,
   FilterList,
   Inbox,
+  Key,
   NotificationsActive,
   PriorityHigh,
   Refresh,
+  Save,
+  Delete,
   Visibility,
 } from '@mui/icons-material'
 import './App.css'
-import { getNotifications } from './services/notificationService'
+import {
+  clearStoredToken,
+  generateToken,
+  getNotifications,
+  getStoredToken,
+  saveStoredToken,
+} from './services/notificationService'
 import { createLogger } from '../../logging_middleware/browserLogger'
 import {
   formatNotificationTime,
@@ -50,6 +60,15 @@ import {
 } from './utils/notifications'
 
 const logger = createLogger('notification_app_fe')
+
+const emptyAuthForm = {
+  email: '',
+  name: '',
+  rollNo: '',
+  accessCode: '',
+  clientId: '',
+  clientSecret: '',
+}
 
 const theme = createTheme({
   palette: {
@@ -94,6 +113,9 @@ function App() {
   const [priorityLimit, setPriorityLimit] = useState(10)
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
   const [status, setStatus] = useState({ loading: true, error: '' })
+  const [tokenValue, setTokenValue] = useState(() => getStoredToken())
+  const [authForm, setAuthForm] = useState(emptyAuthForm)
+  const [tokenStatus, setTokenStatus] = useState({ loading: false, message: '', error: '' })
 
   const types = useMemo(() => {
     const found = new Set(notifications.map(getNotificationType).filter(Boolean))
@@ -174,6 +196,53 @@ function App() {
       return next
     })
     logger.info('Marked notifications as viewed', { count: list.length })
+  }
+
+  function updateAuthField(field, value) {
+    setAuthForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function saveToken() {
+    const trimmedToken = tokenValue.trim()
+    if (!trimmedToken) {
+      clearStoredToken()
+      setTokenStatus({ loading: false, message: '', error: 'Enter a token before saving.' })
+      return
+    }
+
+    saveStoredToken(trimmedToken)
+    setTokenValue(trimmedToken)
+    setTokenStatus({ loading: false, message: 'Token saved for this browser.', error: '' })
+    logger.info('Saved notification API token')
+  }
+
+  function clearToken() {
+    clearStoredToken()
+    setTokenValue('')
+    setTokenStatus({ loading: false, message: 'Token cleared.', error: '' })
+    logger.info('Cleared notification API token')
+  }
+
+  async function handleGenerateToken() {
+    setTokenStatus({ loading: true, message: '', error: '' })
+
+    try {
+      const token = await generateToken(authForm)
+      setTokenValue(token)
+      setAuthForm(emptyAuthForm)
+      setTokenStatus({ loading: false, message: 'Token generated and saved.', error: '' })
+      logger.info('Generated notification API token')
+      await fetchNotifications()
+    } catch (error) {
+      setTokenStatus({
+        loading: false,
+        message: '',
+        error: error instanceof Error ? error.message : 'Unable to generate token.',
+      })
+      logger.error('Failed to generate notification API token', {
+        message: error instanceof Error ? error.message : String(error),
+      })
+    }
   }
 
   const visibleList = activePage === 'priority' ? priorityNotifications : filteredNotifications
@@ -283,6 +352,106 @@ function App() {
                           inputProps={{ 'aria-label': 'Show unread notifications only' }}
                         />
                       </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Key color="primary" />
+                      <Typography variant="h2">API Token</Typography>
+                    </Stack>
+                    <Stack spacing={1.5} mt={2}>
+                      <TextField
+                        label="Bearer token"
+                        value={tokenValue}
+                        onChange={(event) => setTokenValue(event.target.value)}
+                        type="password"
+                        size="small"
+                        fullWidth
+                        autoComplete="off"
+                      />
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="contained"
+                          startIcon={<Save />}
+                          onClick={saveToken}
+                          fullWidth
+                        >
+                          Save
+                        </Button>
+                        <Tooltip title="Clear saved token">
+                          <span>
+                            <IconButton
+                              color="primary"
+                              onClick={clearToken}
+                              aria-label="Clear saved token"
+                            >
+                              <Delete />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Stack>
+
+                      <Divider />
+
+                      <Stack spacing={1.25}>
+                        <TextField
+                          label="Email"
+                          value={authForm.email}
+                          onChange={(event) => updateAuthField('email', event.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                        <TextField
+                          label="Name"
+                          value={authForm.name}
+                          onChange={(event) => updateAuthField('name', event.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                        <TextField
+                          label="Roll number"
+                          value={authForm.rollNo}
+                          onChange={(event) => updateAuthField('rollNo', event.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                        <TextField
+                          label="Access code"
+                          value={authForm.accessCode}
+                          onChange={(event) => updateAuthField('accessCode', event.target.value)}
+                          type="password"
+                          size="small"
+                          fullWidth
+                        />
+                        <TextField
+                          label="Client ID"
+                          value={authForm.clientId}
+                          onChange={(event) => updateAuthField('clientId', event.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                        <TextField
+                          label="Client secret"
+                          value={authForm.clientSecret}
+                          onChange={(event) => updateAuthField('clientSecret', event.target.value)}
+                          type="password"
+                          size="small"
+                          fullWidth
+                        />
+                        <Button
+                          variant="outlined"
+                          startIcon={tokenStatus.loading ? <CircularProgress size={16} /> : <Key />}
+                          onClick={handleGenerateToken}
+                          disabled={tokenStatus.loading}
+                        >
+                          Generate token
+                        </Button>
+                      </Stack>
+                      {tokenStatus.error && <Alert severity="error">{tokenStatus.error}</Alert>}
+                      {tokenStatus.message && <Alert severity="success">{tokenStatus.message}</Alert>}
                     </Stack>
                   </CardContent>
                 </Card>

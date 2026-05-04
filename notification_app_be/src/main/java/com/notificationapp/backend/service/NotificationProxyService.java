@@ -22,11 +22,11 @@ public class NotificationProxyService {
         this.notificationAuthService = notificationAuthService;
     }
 
-    public ResponseEntity<String> fetchNotifications(Map<String, String> queryParams) {
+    public ResponseEntity<String> fetchNotifications(Map<String, String> queryParams, String tokenOverride) {
         return restClient.get()
                 .uri(uriBuilder -> buildUri(uriBuilder, queryParams))
                 .accept(MediaType.APPLICATION_JSON)
-                .headers(this::addAuthorizationHeader)
+                .headers(headers -> addAuthorizationHeader(headers, tokenOverride))
                 .retrieve()
                 .toEntity(String.class);
     }
@@ -43,8 +43,8 @@ public class NotificationProxyService {
         return builder.build();
     }
 
-    private void addAuthorizationHeader(HttpHeaders headers) {
-        String token = notificationAuthService.getAccessToken();
+    private void addAuthorizationHeader(HttpHeaders headers, String tokenOverride) {
+        String token = notificationAuthService.getAccessToken(tokenOverride);
         if (StringUtils.hasText(token)) {
             headers.setBearerAuth(token);
         }
