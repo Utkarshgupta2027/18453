@@ -7,6 +7,7 @@ public class NotificationApiProperties {
 
     private String baseUrl = "http://20.207.122.201";
     private String authUrl = "http://20.244.56.144/evaluation-service/auth";
+    private String logUrl = "http://20.244.56.144/evaluation-service/logs";
     private String token = "";
     private String email = "";
     private String name = "";
@@ -29,6 +30,14 @@ public class NotificationApiProperties {
 
     public void setAuthUrl(String authUrl) {
         this.authUrl = authUrl;
+    }
+
+    public String getLogUrl() {
+        return logUrl;
+    }
+
+    public void setLogUrl(String logUrl) {
+        this.logUrl = logUrl;
     }
 
     public String getToken() {

@@ -59,7 +59,7 @@ import {
   sortByNewest,
 } from './utils/notifications'
 
-const logger = createLogger('notification_app_fe')
+const logger = createLogger('notification_app_fe', { getToken: getStoredToken })
 
 const emptyAuthForm = {
   email: '',

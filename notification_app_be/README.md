@@ -59,10 +59,13 @@ mvn spring-boot:run
 - `GET /api/health`
 - `GET /api/notifications`
 - `POST /api/auth/token`
+- `POST /api/logs`
 
 The notifications endpoint forwards `limit`, `page`, and `notification_type` query parameters to the external API.
 
 `GET /api/notifications` accepts an optional `X-Notification-Token` header. If that header is present, it takes priority over environment-variable credentials.
+
+`POST /api/logs` accepts frontend log entries and forwards them to the configured evaluation log service. It also accepts the optional `X-Notification-Token` header.
 
 `POST /api/auth/token` accepts:
 
