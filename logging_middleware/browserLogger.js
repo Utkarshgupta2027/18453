@@ -1,30 +1,56 @@
 const LOG_STORAGE_KEY = 'notificationAppLogs'
 const DEFAULT_ENDPOINT = '/api/logs'
 const MAX_STORED_LOGS = 200
-const LEVELS = new Set(['debug', 'info', 'warn', 'error', 'fatal'])
 
-export function createLogger(source, options = {}) {
-  const config = {
-    endpoint: options.endpoint ?? DEFAULT_ENDPOINT,
-    getToken: options.getToken,
-    sendRemote: options.sendRemote ?? true,
-  }
+const STACKS = new Set(['frontend', 'backend'])
+const LEVELS = new Set(['debug', 'info', 'warn', 'error', 'fatal'])
+const PACKAGES = new Set([
+  'api',
+  'component',
+  'hook',
+  'page',
+  'state',
+  'style',
+  'auth',
+  'config',
+  'middleware',
+  'utils',
+])
+
+const loggerConfig = {
+  endpoint: DEFAULT_ENDPOINT,
+  getToken: undefined,
+}
+
+export function configureLogger(options = {}) {
+  loggerConfig.endpoint = options.endpoint ?? loggerConfig.endpoint
+  loggerConfig.getToken = options.getToken ?? loggerConfig.getToken
+}
+
+export async function Log(stack, level, packageName, message) {
+  const entry = createLogEntry(stack, level, packageName, message)
+  persistLog(entry)
+  return sendLog(entry)
+}
+
+export function createLogger(packageName, options = {}) {
+  configureLogger(options)
 
   return {
     debug(message, context = {}) {
-      writeLog('debug', source, message, context, config)
+      return Log('frontend', 'debug', packageName, formatMessage(message, context))
     },
     info(message, context = {}) {
-      writeLog('info', source, message, context, config)
+      return Log('frontend', 'info', packageName, formatMessage(message, context))
     },
     warn(message, context = {}) {
-      writeLog('warn', source, message, context, config)
+      return Log('frontend', 'warn', packageName, formatMessage(message, context))
     },
     error(message, context = {}) {
-      writeLog('error', source, message, context, config)
+      return Log('frontend', 'error', packageName, formatMessage(message, context))
     },
     fatal(message, context = {}) {
-      writeLog('fatal', source, message, context, config)
+      return Log('frontend', 'fatal', packageName, formatMessage(message, context))
     },
   }
 }
@@ -47,34 +73,30 @@ export function clearStoredLogs() {
   }
 }
 
-function writeLog(level, source, message, context, config) {
-  const entry = createLogEntry(level, source, message, context)
-  persistLog(entry)
-
-  if (config.sendRemote) {
-    sendLog(entry, config)
+function createLogEntry(stack, level, packageName, message) {
+  const entry = {
+    stack: normalizeValue(stack, STACKS, 'frontend'),
+    level: normalizeValue(level, LEVELS, 'info'),
+    package: normalizeValue(packageName, PACKAGES, 'component'),
+    message: String(message || 'Application event'),
   }
 
-  return entry
-}
-
-function createLogEntry(level, source, message, context) {
-  const safeLevel = LEVELS.has(level) ? level : 'info'
-  const safeContext = context && typeof context === 'object' ? context : { value: context }
-
   return {
-    stack: 'frontend',
-    level: safeLevel,
-    package: source || 'notification_app_fe',
-    message: formatMessage(message, safeContext),
-    context: safeContext,
+    ...entry,
     timestamp: new Date().toISOString(),
   }
 }
 
+function normalizeValue(value, allowedValues, fallback) {
+  const normalized = String(value || '').trim().toLowerCase()
+  return allowedValues.has(normalized) ? normalized : fallback
+}
+
 function formatMessage(message, context) {
   const text = message instanceof Error ? message.message : String(message)
-  if (!Object.keys(context).length) return text
+  if (!context || typeof context !== 'object' || !Object.keys(context).length) {
+    return text
+  }
 
   try {
     return `${text} ${JSON.stringify(context)}`
@@ -94,18 +116,18 @@ function persistLog(entry) {
   }
 }
 
-function sendLog(entry, config) {
-  if (typeof fetch !== 'function') return
+async function sendLog(entry) {
+  if (typeof fetch !== 'function') return undefined
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  }
+  const token = loggerConfig.getToken?.()
+  if (token) headers['X-Notification-Token'] = token
 
   try {
-    const headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    }
-    const token = config.getToken?.()
-    if (token) headers['X-Notification-Token'] = token
-
-    fetch(config.endpoint, {
+    const response = await fetch(loggerConfig.endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -115,9 +137,11 @@ function sendLog(entry, config) {
         message: entry.message,
       }),
       keepalive: true,
-    }).catch(() => {})
+    })
+
+    return response
   } catch {
-    // Remote logging is best-effort.
+    return undefined
   }
 }
 
