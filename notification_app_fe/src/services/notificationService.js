@@ -1,4 +1,4 @@
-const API_PATH = '/evaluation-service/notifications'
+const API_PATH = '/api/notifications'
 
 export async function getNotifications({ limit, page, notificationType } = {}) {
   const params = new URLSearchParams()
@@ -15,7 +15,11 @@ export async function getNotifications({ limit, page, notificationType } = {}) {
   })
 
   if (!response.ok) {
-    throw new Error(`Notification API returned ${response.status}`)
+    if (response.status === 401) {
+      throw new Error('Backend reached the notification API, but the API token is missing or expired.')
+    }
+
+    throw new Error(`Notification backend returned ${response.status}`)
   }
 
   const payload = await response.json()
