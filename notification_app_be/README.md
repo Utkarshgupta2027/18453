@@ -4,7 +4,19 @@ Spring Boot backend that proxies notification requests to the protected evaluati
 
 ## Run
 
-Set a valid, non-expired API token, then start the service:
+Set the API login values, then start the service. The backend will request and cache the bearer token automatically.
+
+```powershell
+$env:NOTIFICATION_API_EMAIL="your_email"
+$env:NOTIFICATION_API_NAME="your_name"
+$env:NOTIFICATION_API_ROLL_NO="your_roll_number"
+$env:NOTIFICATION_API_ACCESS_CODE="your_access_code"
+$env:NOTIFICATION_API_CLIENT_ID="your_client_id"
+$env:NOTIFICATION_API_CLIENT_SECRET="your_client_secret"
+mvn spring-boot:run
+```
+
+If you already have a valid bearer token, you can use this fallback instead:
 
 ```powershell
 $env:NOTIFICATION_API_TOKEN="your_token_here"

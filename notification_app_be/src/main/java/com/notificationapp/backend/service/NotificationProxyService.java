@@ -1,6 +1,5 @@
 package com.notificationapp.backend.service;
 
-import com.notificationapp.backend.config.NotificationApiProperties;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,11 +13,13 @@ import org.springframework.web.util.UriBuilder;
 public class NotificationProxyService {
 
     private final RestClient restClient;
-    private final NotificationApiProperties properties;
+    private final NotificationAuthService notificationAuthService;
 
-    public NotificationProxyService(RestClient notificationRestClient, NotificationApiProperties properties) {
+    public NotificationProxyService(
+            RestClient notificationRestClient,
+            NotificationAuthService notificationAuthService) {
         this.restClient = notificationRestClient;
-        this.properties = properties;
+        this.notificationAuthService = notificationAuthService;
     }
 
     public ResponseEntity<String> fetchNotifications(Map<String, String> queryParams) {
@@ -43,8 +44,9 @@ public class NotificationProxyService {
     }
 
     private void addAuthorizationHeader(HttpHeaders headers) {
-        if (StringUtils.hasText(properties.getToken())) {
-            headers.setBearerAuth(properties.getToken());
+        String token = notificationAuthService.getAccessToken();
+        if (StringUtils.hasText(token)) {
+            headers.setBearerAuth(token);
         }
     }
 }
