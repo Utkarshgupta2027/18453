@@ -14,6 +14,7 @@
   min-height: 76px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 16px;
 }
 
@@ -41,6 +42,23 @@
 .mainContent {
   padding-top: 24px;
   padding-bottom: 32px;
+}
+
+.appLayout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.sidebarPanel,
+.feedPanel {
+  min-width: 0;
+}
+
+.sidebarStack {
+  position: sticky;
+  top: 96px;
 }
 
 .workspaceCard {
@@ -92,6 +110,10 @@
   padding: 16px;
 }
 
+.notificationContent > .MuiStack-root {
+  min-width: 0;
+}
+
 .messageText {
   margin-top: 10px;
   color: #172033;
@@ -105,11 +127,57 @@
   text-align: center;
 }
 
+@media (max-width: 1180px) {
+  .appLayout {
+    grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .sidebarStack {
+    top: 92px;
+  }
+}
+
+@media (max-width: 960px) {
+  .appLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebarStack {
+    position: static;
+  }
+
+  .workspaceCard {
+    min-height: 560px;
+  }
+}
+
 @media (max-width: 720px) {
+  .appShell {
+    background: #f7f8fb;
+  }
+
   .toolbar {
+    min-height: auto;
+    flex-wrap: wrap;
     align-items: flex-start;
+    justify-content: flex-start;
     padding-top: 12px;
     padding-bottom: 12px;
+  }
+
+  .toolbar > .MuiStack-root:first-of-type {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .toolbar h1 {
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+
+  .toolbar .MuiTypography-body2 {
+    font-size: 0.85rem;
   }
 
   .brandMark {
@@ -119,9 +187,85 @@
 
   .mainContent {
     padding-top: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 20px;
+  }
+
+  .appLayout {
+    gap: 14px;
   }
 
   .workspaceCard {
     min-height: auto;
+  }
+
+  .workspaceCard .MuiCardContent-root,
+  .sidebarPanel .MuiCardContent-root {
+    padding: 16px;
+  }
+
+  .workspaceCard .MuiTabs-root {
+    max-width: 100%;
+  }
+
+  .workspaceCard .MuiTab-root {
+    min-width: 132px;
+    min-height: 44px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .notificationContent {
+    padding: 14px;
+  }
+
+  .notificationIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .metric {
+    padding: 10px 12px;
+  }
+
+  .loadingState,
+  .emptyState {
+    min-height: 300px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mainContent {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .toolbar {
+    gap: 10px;
+  }
+
+  .toolbar h1 {
+    font-size: 1.2rem;
+  }
+
+  .brandMark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .workspaceCard .MuiCardContent-root,
+  .sidebarPanel .MuiCardContent-root {
+    padding: 14px;
+  }
+
+  .workspaceCard .MuiButton-root,
+  .sidebarPanel .MuiButton-root {
+    min-height: 42px;
+  }
+
+  .messageText {
+    font-size: 0.95rem;
   }
 }

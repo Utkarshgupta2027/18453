@@ -13,7 +13,6 @@ import {
   CssBaseline,
   Divider,
   FormControl,
-  Grid,
   IconButton,
   InputLabel,
   MenuItem,
@@ -285,9 +284,9 @@ function App() {
         </AppBar>
 
         <Container maxWidth="xl" className="mainContent">
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} lg={3}>
-              <Stack spacing={2}>
+          <Box className="appLayout">
+            <Box className="sidebarPanel">
+              <Stack spacing={2} className="sidebarStack">
                 <Card>
                   <CardContent>
                     <Typography variant="h2">Overview</Typography>
@@ -456,9 +455,9 @@ function App() {
                   </CardContent>
                 </Card>
               </Stack>
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} lg={9}>
+            <Box className="feedPanel">
               <Card className="workspaceCard">
                 <CardContent>
                   <Stack
@@ -471,6 +470,8 @@ function App() {
                       value={activePage}
                       onChange={(_, nextPage) => setActivePage(nextPage)}
                       aria-label="Notification pages"
+                      variant="scrollable"
+                      scrollButtons="auto"
                     >
                       <Tab value="all" label="All Notifications" />
                       <Tab value="priority" label="Priority Inbox" />
@@ -516,8 +517,8 @@ function App() {
                   )}
                 </CardContent>
               </Card>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Container>
       </Box>
     </ThemeProvider>
@@ -556,7 +557,11 @@ function NotificationList({ title, notifications, viewedIds, onView }) {
         return (
           <Card key={id} className={isViewed ? 'notification viewed' : 'notification unread'}>
             <CardContent className="notificationContent">
-              <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1.5}
+                alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+              >
                 <Box className="notificationIcon">
                   {isViewed ? <Visibility fontSize="small" /> : <PriorityHigh fontSize="small" />}
                 </Box>
