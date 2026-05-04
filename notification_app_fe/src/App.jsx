@@ -22,7 +22,6 @@ import {
   Switch,
   Tab,
   Tabs,
-  TextField,
   ThemeProvider,
   Toolbar,
   Tooltip,
@@ -41,7 +40,6 @@ import {
 import './App.css'
 import { getNotifications } from './services/notificationService'
 import { createLogger } from '../../logging_middleware/browserLogger'
-import { login as authLogin, logout as authLogout, getCurrentUser } from './services/authService'
 import {
   formatNotificationTime,
   getNotificationId,
@@ -95,10 +93,7 @@ function App() {
   const [notificationType, setNotificationType] = useState('All')
   const [priorityLimit, setPriorityLimit] = useState(10)
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
-  const [status, setStatus] = useState({ loading: false, error: '' })
-  const [user, setUser] = useState(getCurrentUser())
-  const [credentials, setCredentials] = useState({ username: '', password: '' })
-  const [authError, setAuthError] = useState('')
+  const [status, setStatus] = useState({ loading: true, error: '' })
 
   const types = useMemo(() => {
     const found = new Set(notifications.map(getNotificationType).filter(Boolean))
@@ -130,10 +125,8 @@ function App() {
   )
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications()
-    }
-  }, [user])
+    fetchNotifications()
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('viewedNotificationIds', JSON.stringify([...viewedIds]))
@@ -174,26 +167,6 @@ function App() {
     logger.info('Marked notification as viewed', { id })
   }
 
-  function handleLogin(event) {
-    event.preventDefault()
-    const result = authLogin(credentials)
-    if (!result.success) {
-      setAuthError(result.message)
-      return
-    }
-
-    setUser(result.user)
-    setAuthError('')
-  }
-
-  function handleLogout() {
-    authLogout()
-    setUser(null)
-    setNotifications([])
-    setViewedIds(new Set())
-    setStatus({ loading: false, error: '' })
-  }
-
   function markAllViewed(list) {
     setViewedIds((current) => {
       const next = new Set(current)
@@ -204,65 +177,6 @@ function App() {
   }
 
   const visibleList = activePage === 'priority' ? priorityNotifications : filteredNotifications
-
-  if (!user) {
-    return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Box className="appShell">
-          <Container maxWidth="sm" className="mainContent">
-            <Card>
-              <CardContent>
-                <Stack spacing={2}>
-                  <Stack spacing={1}>
-                    <Typography variant="h2">Campus Notifications Login</Typography>
-                    <Typography color="text.secondary">
-                      Enter any username and password to continue. This is a frontend-only login middleware.
-                    </Typography>
-                  </Stack>
-
-                  {authError && <Alert severity="error">{authError}</Alert>}
-
-                  <form onSubmit={handleLogin}>
-                    <Stack spacing={2}>
-                      <TextField
-                        label="Username"
-                        value={credentials.username}
-                        onChange={(event) =>
-                          setCredentials((current) => ({
-                            ...current,
-                            username: event.target.value,
-                          }))
-                        }
-                        autoComplete="username"
-                        fullWidth
-                      />
-                      <TextField
-                        label="Password"
-                        type="password"
-                        value={credentials.password}
-                        onChange={(event) =>
-                          setCredentials((current) => ({
-                            ...current,
-                            password: event.target.value,
-                          }))
-                        }
-                        autoComplete="current-password"
-                        fullWidth
-                      />
-                      <Button type="submit" variant="contained" size="large">
-                        Sign in
-                      </Button>
-                    </Stack>
-                  </form>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Container>
-        </Box>
-      </ThemeProvider>
-    )
-  }
 
   return (
     <ThemeProvider theme={theme}>
